@@ -20,6 +20,8 @@ The current version is based on `timepicker.py` from the [KivyMD master branch a
 time_dialog = MDTimePicker()
 ```
 
+<br>
+
 ## How to make use of it with [Buildozer](https://github.com/kivy/buildozer) or [python-for-android](https://github.com/kivy/python-for-android/)?
 
 * If you don't have it yet, create a directory in your project folder for your own recipes (e.g. `myRecipes`) and download the `kivymd` folder into it.
@@ -28,5 +30,7 @@ time_dialog = MDTimePicker()
     * `requirements = ..,kivymd` < whatever you had here before the application of the above recipe (could be e.g. `https://github.com/kivymd/KivyMD/archive/master.zip`), now you have to refer to it be the name of your recipe: `kivymd`
     * `p4a.local_recipes = myRecipes`
 * Either delete the corresponding folders, or just `buildozer android clean` to enforce the new recipe with the patch.
+
+<br>
 
 ![TimePicker with 24h support](TimePicker-with-24h-support.png)
