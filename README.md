@@ -27,9 +27,9 @@ time_dialog = MDTimePicker()
 * If you don't have it yet, create a directory in your project folder for your own recipes (e.g. `myRecipes`) and download the `kivymd` folder into it.
 * You also have to amend your `buildozer.spec` file in three ways:
     * `source.exclude_dirs = ..,myRecipes` (not critical, but better so)
-    * `requirements = ..,kivymd` < whatever you had here before the application of the above recipe (could be e.g. `https://github.com/kivymd/KivyMD/archive/master.zip`), now you have to refer to it be the name of your recipe: `kivymd`
+    * `requirements = ..,kivymd` < whatever you had here before the application of the above recipe (could be e.g. `https://github.com/kivymd/KivyMD/archive/master.zip`), now you have to refer to it with the name of your recipe: `kivymd`
     * `p4a.local_recipes = myRecipes`
-* Either delete the corresponding folders, or just `buildozer android clean` to enforce the new recipe with the patch.
+* Before the next build, either delete the corresponding folders, or just `buildozer android clean` to enforce the new recipe with the patch.
 
 <br>
 
