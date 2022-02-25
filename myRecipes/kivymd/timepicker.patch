@@ -1,0 +1,176 @@
+--- a/kivymd/uix/pickers/timepicker/timepicker.py
++++ b/kivymd/uix/pickers/timepicker/timepicker.py
+@@ -163,7 +163,6 @@ class AmPmSelector(ThemableBehavior, MDBoxLayout, EventDispatcher):
+ 
+ class TimeInputTextField(MDTextField):
+     num_type = OptionProperty("hour", options=["hour", "minute"])
+-    hour_regx = "^[0-9]$|^0[1-9]$|^1[0-2]$"
+     minute_regx = "^[0-9]$|^0[0-9]$|^[1-5][0-9]$"
+ 
+     def __init__(self, **kwargs):
+@@ -171,6 +170,7 @@ class TimeInputTextField(MDTextField):
+         Clock.schedule_once(self.on_text)
+         self.register_event_type("on_select")
+         self.bind(text_color=self.setter("hint_text_color_normal"))
++        TimeInputTextField.hour_regx = "^[0-9]$|^0[1-9]$|^1[0-2]$" if MDTimePicker.AMPM_or_24h == 'AMPM' else "^[0-9]$|^0[0-9]$|^1[0-9]$|^2[0-3]$"
+ 
+     def validate_time(self, s):
+         reg = self.hour_regx if self.num_type == "hour" else self.minute_regx
+@@ -189,8 +189,9 @@ class TimeInputTextField(MDTextField):
+         to somehow make them aligned.
+         """
+ 
+-        if not self.text:
+-            self.text = " "
++        if MDTimePicker.AMPM_or_24h == 'AMPM':  # The two lines under the first 'if' are not needed in the '24h' mode. Besides, this saves us (only in the '24h' mode!) from the bug that crashes TimePicker when you delete all digits in the text input field for the hour or the minute. See the bug report at https://github.com/kivymd/KivyMD/issues/966.
++            if not self.text:
++                self.text = " "
+ 
+         self._refresh_text(self.text)
+         max_size = max(self._lines_rects, key=lambda r: r.size[0]).size
+@@ -203,15 +204,16 @@ class TimeInputTextField(MDTextField):
+ 
+     def on_focus(self, *args):
+         super().on_focus(*args)
+-        if self.text.strip():
+-            if (
+-                not self.focus
+-                and int(self.text) == 0
+-                and self.num_type == "hour"
+-            ):
+-                self.text = "12"
+-        else:
+-            self.text = " 12" if self.num_type == "hour" else " 00"
++        if MDTimePicker.AMPM_or_24h == 'AMPM':
++            if self.text.strip():
++                if (
++                    not self.focus
++                    and int(self.text) == 0
++                    and self.num_type == "hour"
++                ):
++                    self.text = "12"
++            else:
++                self.text = " 12" if self.num_type == "hour" else " 00"
+ 
+     def on_select(self, *args):
+         pass
+@@ -268,7 +270,7 @@ class SelectorLabel(MDLabel):
+ 
+ 
+ class CircularSelector(MDCircularLayout, EventDispatcher):
+-    mode = OptionProperty("hour", options=["hour", "minute"])  # and military
++    mode = OptionProperty("hour", options=["hour", "minute"])
+     text_color = ColorProperty()
+     selected_hour = StringProperty("12")
+     selected_minute = StringProperty("0")
+@@ -300,22 +302,22 @@ class CircularSelector(MDCircularLayout, EventDispatcher):
+ 
+     def _update_labels(self, animate=True, *args):
+         """
+-        This method builds the selector based on current mode which currently
+-        can be hour or minute.
++        This method builds the selector based on current mode.
+         """
+ 
+         if self.mode == "hour":
+-            param = (1, 12)
+-            self.degree_spacing = 30
+-            self.start_from = 60
++            if MDTimePicker.AMPM_or_24h == "AMPM":
++                param = (1, 12)
++                self.degree_spacing = 30
++                self.start_from = 60
++            else:
++                param = (0, 23)
++                self.degree_spacing = 30
++                self.start_from = 90
+         elif self.mode == "minute":
+             param = (0, 59, 5)
+             self.degree_spacing = 6
+             self.start_from = 90
+-        elif self.mode == "military":
+-            param = (1, 24)
+-            self.degree_spacing = 30
+-            self.start_from = 90
+         if animate:
+             anim = Animation(content_scale=0, t=self.t, d=self.d)
+             anim.bind(on_complete=lambda *args: self._add_items(*param))
+@@ -431,6 +433,14 @@ class CircularSelector(MDCircularLayout, EventDispatcher):
+ 
+ 
+ class MDTimePicker(BaseDialogPicker):
++    AMPM_or_24h = OptionProperty("24h", options=["24h", "AMPM"])
++    """
++    The time representation to use: `'AMPM'` or `'24h'`
++
++    :attr:`AMPM_or_24h` is an :class:`~kivy.properties.OptionProperty`
++    and defaults to `'24h'`.
++    """
++
+     hour = StringProperty("12")
+     """
+     Current hour
+@@ -536,9 +546,9 @@ class MDTimePicker(BaseDialogPicker):
+         )
+         self.theme_cls.bind(device_orientation=self._check_orienation)
+         self.title = "SELECT TIME"
+-        # default time
+-        self.set_time(datetime.time(hour=12, minute=0))
++        self.set_time(datetime.time(hour=12, minute=0))   # default time
+         self._check_orienation()
++        MDTimePicker.AMPM_or_24h = self.AMPM_or_24h
+ 
+     def _get_dial_time(self, instance):
+         mode = instance.mode
+@@ -582,7 +592,8 @@ class MDTimePicker(BaseDialogPicker):
+         hour = time_obj.hour
+         minute = time_obj.minute
+         if hour > 12:
+-            hour -= 12
++            if self.AMPM_or_24h == "AMPM":
++                hour -= 12
+             mode = "pm"
+         else:
+             mode = "am"
+@@ -602,10 +613,11 @@ class MDTimePicker(BaseDialogPicker):
+ 
+     def _get_data(self):
+         try:
+-            result = datetime.datetime.strptime(
++            result = (datetime.datetime.strptime(
+                 f"{int(self.hour):02d}:{int(self.minute):02d} {self.am_pm}",
+-                "%I:%M %p",
+-            ).time()
++                "%I:%M %p") if self.AMPM_or_24h == "AMPM" else datetime.datetime.strptime(
++                f"{int(self.hour):02d}:{int(self.minute):02d}",
++                "%H:%M")).time()
+             return result
+         except ValueError:
+             return None  # hour is zero
+@@ -619,7 +631,7 @@ class MDTimePicker(BaseDialogPicker):
+         d = self.animation_duration
+         # time input
+         time_input_pos = (
+-            [dp(24), dp(368)]
++            [dp(24) if self.AMPM_or_24h == "AMPM" else dp(56), dp(368)]
+             if orientation == "portrait"
+             else (
+                 [dp(24), dp(178)]
+@@ -685,6 +697,8 @@ class MDTimePicker(BaseDialogPicker):
+         )
+         if anim:
+             Animation(
++                scale=1 if self.AMPM_or_24h == "AMPM" else 0,
++                opacity=1 if self.AMPM_or_24h == "AMPM" else 0,
+                 pos=am_pm_pos,
+                 size=am_pm_size,
+                 d=d,
+@@ -693,6 +707,8 @@ class MDTimePicker(BaseDialogPicker):
+         else:
+             self._am_pm_selector.pos = am_pm_pos
+             self._am_pm_selector.size = am_pm_size
++            self._am_pm_selector.scale = 1 if self.AMPM_or_24h == "AMPM" else 0
++            self._am_pm_selector.opacity = 1 if self.AMPM_or_24h == "AMPM" else 0
+ 
+         self._am_pm_selector.orientation = (
+             "horizontal" if orientation == "landscape" else "vertical"
