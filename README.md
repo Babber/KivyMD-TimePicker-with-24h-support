@@ -11,7 +11,7 @@ Independently of this design detail, I would like to express my great appreciati
 
 ## How to use `timepicker.py` in a desktop environment?
 
-The current version is based on `timepicker.py` from the [KivyMD master branch as of 220223 (hash: 041c7af)](https://github.com/kivymd/KivyMD/archive/041c7af.zip). If you use this branch or something sufficiently similar, just replace `/kivymd/uix/pickers/timepicker/timepicker.py` with the file from here, then...
+Releases of this repo are tagged as `v<version numbers>+<hash of the KivyMD master branch that the current patch is based on>`. If you use the given KivyMD release or one that is sufficiently similar, just replace `/kivymd/uix/pickers/timepicker/timepicker.py` with the file from here, then...
 
 ```py
 #MDTimePicker.AMPM_or_24h="24h"   # to use the 24h clock (the default setting)
@@ -23,6 +23,8 @@ time_dialog = MDTimePicker()
 <br>
 
 ## How to make use of it with [Buildozer](https://github.com/kivy/buildozer) or [python-for-android](https://github.com/kivy/python-for-android/)?
+
+The patch in the recipe is also based on the same version of the KivyMD master branch as `timepicker.py`, see above. To apply this recipe, follow the steps below:
 
 * If you don't have it yet, create a directory in your project folder for your own recipes (e.g. `myRecipes`) and download the `kivymd` folder into it.
 * You also have to amend your `buildozer.spec` file in three ways:
